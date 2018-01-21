@@ -161,6 +161,3 @@ class BaseTask:
     def do_task(self):
         pass 
 
-
-if __name__ == '__main__':
-    pass 
