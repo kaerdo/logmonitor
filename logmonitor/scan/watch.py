@@ -4,6 +4,7 @@
 from os import path 
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
+import match 
 
 class watcher(FileSystemEventHandler):
     def __init__(self, filename, matcher):
