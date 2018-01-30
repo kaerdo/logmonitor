@@ -4,12 +4,12 @@
 from os import path 
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
-import match 
+
 
 class watcher(FileSystemEventHandler):
-    def __init__(self, filename, matcher):
+    def __init__(self, filename, Matcher):
         self.filename = path.abspath(filename) 
-        self.matcher = matcher
+        self.matcher = Matcher
         self.observer = Observer()
         self.fd = None 
         self.offset = 0 
