@@ -2,7 +2,7 @@
 # -*-coding:utf8-*-
 
 from Queue import Queue, Full, Empty
-from threading import Thread, Event, 
+from threading import Thread, Event, BoundedSemaphore
 import pymysql
 
 class Message:
@@ -33,9 +33,10 @@ CREATE TABLE `message` (
 '''
 
 class Notifyer:
-    def __init__(self):
+    def __init__(self): 
         self.event = Event()
         self.queue = Queue(1000)
+        self.__semaphore = BoundedSemaphore(5)
 
     # pymysql 线程安全级别为1 Threads may share the module, but not connections
     def initdb(self):
@@ -63,12 +64,39 @@ class Notifyer:
         except Full:
             pass  
 
-    def start(self):
-        t = Thread(target=self.sender, name="sender01")
-        t.daemon = True
-        t.start()
+    def __compensate(self):
+        while not self.event.is_set():
+            self.event.wait(5)
+            conn = self.initdb()
+            cursor = conn.cursor()
+            sql = "select id from message where is_send=0"
+            cursor.execute(sql)
+            result = cursor.fetchall()
+            for item in result:
+                reqID, = item
+                try:
+                    self.queue.put_nowait(reqID)  
+                except Full:
+                    pass  
 
-    def sender(self):
+    def start(self):
+        t1 = Thread(target=self.__sender, name="sender01")
+        t1.daemon = True
+        t1.start()
+        t2 = Thread(target=self.__compensate, name="compensate01")
+        t2.daemon = True
+        t2.start()
+
+    def __sender_wrap(self, st, message):
+        with self.__semaphore:
+            st(message)
+            conn = self.initdb()
+            cursor = conn.cursor()
+            sql = "update message set is_send=1 where id={}".format(message[0])
+            cursor.execute(sql) 
+            conn.commit()
+
+    def __sender(self):
         while not self.event.is_set():
             try:
                 reqID = self.queue.get(block=True, timeout=60)
@@ -79,15 +107,18 @@ class Notifyer:
             sql = "select * from message where id={}".format(reqID)
             cursor.execute(sql) 
             result = cursor.fetchone()
-            print result
-#           for item in ["send_mail", "send_mobile"]:
-#                    pass 
+            for item in dir(self.__class__):
+                if item.startswith("send"):
+                    st = getattr(self, item)
+                    t = Thread(target=self.__sender_wrap, args=(st, result))
+                    t.daemon = True
+                    t.start()
 
     def send_mail(self, message):
-        pass 
+        print message
 
     def send_mobile(self, message):
-        pass  
+        print message  
 
     def stop(self):
         self.event.set()
@@ -112,4 +143,5 @@ if __name__ == '__main__':
     n.notify(message1)
     n.notify(message1)
     import time
-    time.sleep(100)
+    time.sleep(5)
+    n.stop()
