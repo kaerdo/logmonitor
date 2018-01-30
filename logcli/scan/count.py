@@ -15,7 +15,11 @@ class CountHandle:
         self.count.update(rules)
 
     def get(self, filename, rulename):
-        return self.count[filename][rulename]
+        try:
+            count = self.count[filename][rulename]
+        except KeyError:
+            return None 
+        return count  
 
     def remove(self, filename, rulename=None):
         if rulename:
