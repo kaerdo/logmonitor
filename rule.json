@@ -1,5 +1,5 @@
 {
-  "name": xxxx,
+  "name": "xxx",
   "expression": "xxx",
   "interval": 1,
   "threshold" : {"min": 0, "max": 0},
