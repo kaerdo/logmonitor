@@ -6,7 +6,8 @@ from threading import Thread, Event, BoundedSemaphore
 import pymysql
 
 class Message:
-    def __init__(self, count, **kargs):
+    def __init__(self, filename, count, **kargs):
+        self.filename = filename
         # dict 
         self.contacts = kargs.get("contacts")
         # namedtuple 
@@ -20,6 +21,7 @@ Table:
 
 CREATE TABLE `message` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
+  `filename` varchar(20) DEFAULT NULL,
   `count` int(11) DEFAULT NULL,
   `maxthreshold` int(11) DEFAULT NULL,
   `minthreshold` int(11) DEFAULT NULL,
@@ -48,14 +50,15 @@ class Notifyer:
             "db": 'logscan', 
             "charset": 'utf8'
         }
-        return pymysql.connect(**dbcon)
+        conn = pymysql.connect(**dbcon)
+        cursor = conn.cursor()
+        return conn, cursor
 
     def notify(self, message):
-        conn = self.initdb()
-        cursor = conn.cursor()
-        sql = "insert into message(count,maxthreshold,minthreshold,rulename,mail,mobile) values({},{},{},'{}','{}',{})".format(message.count, \
-                            message.threshold.max, message.threshold.min, message.rulename, \
-                            message.contacts.get("mail"), message.contacts.get("mobile"))
+        conn, cursor = self.initdb()
+        sql = "insert into message(count,maxthreshold,minthreshold,rulename,mail,mobile,filename) values({},{},{},'{}','{}',{},'{}')".format(message.count, \
+                message.threshold.max, message.threshold.min, message.rulename, \
+                message.contacts.get("mail"), message.contacts.get("mobile"), message.filename)
         cursor.execute(sql)
         conn.commit()
         reqID = cursor.lastrowid
@@ -67,8 +70,7 @@ class Notifyer:
     def __compensate(self):
         while not self.event.is_set():
             self.event.wait(5)
-            conn = self.initdb()
-            cursor = conn.cursor()
+            conn, cursor = self.initdb()
             sql = "select id from message where is_send=0"
             cursor.execute(sql)
             result = cursor.fetchall()
@@ -90,8 +92,7 @@ class Notifyer:
     def __sender_wrap(self, st, message):
         with self.__semaphore:
             st(message)
-            conn = self.initdb()
-            cursor = conn.cursor()
+            conn, cursor = self.initdb()
             sql = "update message set is_send=1 where id={}".format(message[0])
             cursor.execute(sql) 
             conn.commit()
@@ -102,8 +103,7 @@ class Notifyer:
                 reqID = self.queue.get(block=True, timeout=60)
             except Empty:
                 continue
-            conn = self.initdb()
-            cursor = conn.cursor()
+            conn, cursor = self.initdb()
             sql = "select * from message where id={}".format(reqID)
             cursor.execute(sql) 
             result = cursor.fetchone()

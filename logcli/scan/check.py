@@ -17,7 +17,7 @@ class Checker:
             self.event.wait(self.rule.interval * 60)
             count = self.count.get(self.filename, self.rule.name)
             if count > self.rule.threshold.min and count < self.rule.threshold.max:
-                self.notify.notify(Message(self.count, contacts=self.rule.contacts, \
+                self.notify.notify(Message(self.filename, self.count, contacts=self.rule.contacts, \
                        threshold=self.rule.threshold, rulename=self.rule.rulename))
             self.count.clean(self.filename, self.rule.name)
 

@@ -1,12 +1,24 @@
 #!/usr/bin/env python
 # -*-coding:utf8-*-
 
-class CountHandle:
+class CountBase:
+    __Single = None  
+    __init = True 
 
-    ''' Counter for concurrent counting '''
+    def __new__(cls, *k, **args):
+        if CountBase.__Single:
+            CountBase.__Single = object.__new__(cls)
+        return CountBase.__Single
 
     def __init__(self):
-        self.count = {}
+        if self.__class__.__init:
+            self.count = {} 
+            self.__class__.__init = False
+
+
+class CountHandle(CountBase):
+
+    ''' Counter for concurrent counting '''
 
     def inc(self, filename, rulename):
         rules = self.count.setdefault(filename, {rulename: 0})
