@@ -5,6 +5,7 @@ from kazoo.client import KazooClient
 from kazoo.recipe.watchers import ChildrenWatch, DataWatch
 import os 
 from threading import Event, Thread
+from base64 import urlsafe_b64decode, urlsafe_b64encode
 
 zk = KazooClient(hosts='127.0.0.1:2181')
 zk.start()

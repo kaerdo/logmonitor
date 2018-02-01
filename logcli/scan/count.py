@@ -34,13 +34,16 @@ class CountHandle(CountBase):
         return count  
 
     def remove(self, filename, rulename=None):
-        if rulename:
-            self.count[filename].pop(rulename)
-        else:
-            self.count.pop(filename)
+        try:
+            if rulename:
+                self.count[filename].pop(rulename)
+            else:
+                self.count.pop(filename)
+        except KeyError:
+            pass 
 
     def clean(self, filename, rulename):
         try:
             self.count[filename][rulename] = 0
         except KeyError:
-            raise 
+            pass  

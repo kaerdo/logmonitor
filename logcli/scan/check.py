@@ -15,10 +15,11 @@ class Checker:
     def check(self):
         while not self.event.is_set():
             self.event.wait(self.rule.interval * 60)
+#            self.event.wait(5)
             count = self.count.get(self.filename, self.rule.name)
             if count > self.rule.threshold.min and count < self.rule.threshold.max:
-                self.notify.notify(Message(self.filename, self.count, contacts=self.rule.contacts, \
-                       threshold=self.rule.threshold, rulename=self.rule.rulename))
+                self.notify.notify(Message(self.filename, count, contacts=self.rule.contacts, \
+                       threshold=self.rule.threshold, rulename=self.rule.name))
             self.count.clean(self.filename, self.rule.name)
 
     def start(self):

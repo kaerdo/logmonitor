@@ -6,6 +6,7 @@ from .notifyer import Notifyer
 from watchdog.observers import Observer
 from .watch import WatcherHandler
 from .rule import Rulehandle
+from os import path
 
 class scheduler:
     def __init__(self):
@@ -32,10 +33,10 @@ class scheduler:
         # watch 
         if filename not in self.handles:
             handler = WatcherHandler(filename, self.count, self.notify)
-            if filename not in self.watchers:
-                self.watchers[handler.filename] = self.observer.schedule(handler, handler.filename, recursive=False)
+            if path.dirname(handler.filename) not in self.watchers:
+                self.watchers[path.dirname(handler.filename)] = self.observer.schedule(handler, path.dirname(handler.filename), recursive=False)
         else:
-            watch = self.watchers[handler.filename]
+            watch = self.watchers[path.dirname(handler.filename)]
             self.observer.add_handler_for_watch(handler, watch)
         self.handles.update({handler.filename: handler})
         handler.start()
@@ -44,12 +45,12 @@ class scheduler:
         if filename in self.handles:
             handler = self.handles.pop(filename)
             if handler is not None:
-                watch = self.watchers[handler.filename]
+                watch = self.watchers[path.dirname(handler.filename)]
                 self.observer.remove_handler_for_watch(handler, watch)
                 handler.stop()
                 if not self.observer._handlers[watch]:
                     self.observer.unschedule(watch)
-                    self.watchers.pop(handler.filename)
+                    self.watchers.pop(path.dirname(handler.filename))
 
     def start(self):
         self.observer.start()
