@@ -12,7 +12,7 @@
 配置信息:  
 ```
 {
-	"name": xxxx,
+  "name": xxxx,
   "expression": "xxx",
   "interval": 1,
   "threshold" : {"min": 0, "max": 0},
